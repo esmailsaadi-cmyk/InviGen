@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { generateHTML } from './utils/generateHtml';
 import templateRaw from './template.html?raw';
 import { Download, Play, Image as ImageIcon, Type, MapPin, Palette } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -13,6 +13,14 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+function InvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => map.invalidateSize(), 100);
+  }, [map]);
+  return null;
+}
 
 function LocationMarker({ position, setPosition }) {
   useMapEvents({
@@ -591,6 +599,7 @@ function App() {
             </div>
             <div className="flex-1 w-full bg-gray-100 relative">
               <MapContainer center={[tempLocation?.lat || 32.88, tempLocation?.lng || 13.18]} zoom={13} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                <InvalidateSize />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -602,8 +611,14 @@ function App() {
               <button onClick={() => setMapPickerTarget(null)} className="px-5 py-2.5 rounded-xl text-gray-600 font-medium hover:bg-gray-100 transition">{t.cancel}</button>
               <button onClick={() => {
                 if (tempLocation) {
-                  updateEvent(mapPickerTarget, 'lat', tempLocation.lat);
-                  updateEvent(mapPickerTarget, 'lng', tempLocation.lng);
+                  setState({
+                    ...state,
+                    events: state.events.map((ev, i) =>
+                      i === mapPickerTarget
+                        ? { ...ev, lat: tempLocation.lat, lng: tempLocation.lng }
+                        : ev
+                    )
+                  });
                 }
                 setMapPickerTarget(null);
               }} className="px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-medium transition shadow-lg shadow-pink-500/30">{t.confirmSelection}</button>
