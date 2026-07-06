@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مبروك ومبروكة - دعوة زفاف</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blush: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            200: '#fbcfe8',
+                            300: '#f9a8d4',
+                            400: '#f472b6',
+                            500: '#ec4899',
+                            600: '#db2777',
+                            700: '#be185d',
+                            800: '#9d174d',
+                            900: '#831843',
+                        },
+                        gold: {
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Amiri"', 'serif'],
+                        sans: ['"Cairo"', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'petal-fall': 'petal-fall 10s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        'petal-fall': {
+                            '0%': { transform: 'translateY(-10%) rotate(0deg) scale(0.8)', opacity: '0' },
+                            '10%': { opacity: '0.8' },
+                            '90%': { opacity: '0.8' },
+                            '100%': { transform: 'translateY(110vh) rotate(360deg) scale(1.2)', opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Hero Background Pan Animation */
+        @keyframes panHero {
+            0% { transform: scale(1.15) translateX(-2%); }
+            50% { transform: scale(1.15) translateX(2%); }
+            100% { transform: scale(1.15) translateX(-2%); }
+        }
+        .hero-bg-pan {
+            animation: panHero 25s ease-in-out infinite;
+        }
+        
+        /* Custom Envelope Animations */
+        .envelope-container {
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+        .envelope-container.open {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .flap {
+            transform-origin: top;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .envelope-container.opening .flap {
+            transform: rotateX(180deg);
+            z-index: 0;
+        }
+        .letter {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s, opacity 0.8s ease-in-out 0.4s;
+        }
+        .envelope-container.opening .letter {
+            transform: translateY(-200px) scale(1.5);
+            opacity: 0;
+        }
+        .petal {
+            position: absolute;
+            width: 15px;
+            height: 20px;
+            background: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%);
+            border-radius: 50% 0 50% 0;
+            opacity: 0;
+            z-index: 10;
+        }
+        
+        /* Custom scrollbar for an elegant feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdf2f8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fbcfe8; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f472b6; 
+        }
+    </style>
+</head>
+<body class="bg-[#b07a8a] text-blush-900 font-sans antialiased overflow-x-hidden">
+    <!-- Mobile Simulator Wrapper -->
+    <div class="max-w-[420px] mx-auto bg-blush-50 min-h-screen md:min-h-0 md:h-[90vh] md:max-h-[850px] md:my-[5vh] md:rounded-[2.5rem] md:border-[12px] md:border-white/30 relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+
+
+    <!-- Envelope Opening Overlay -->
+    <style>
+        .envelope-container {
+            transition: opacity 1s ease 1.5s, visibility 1s ease 1.5s;
+        }
+        .envelope-container.open {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .opening .left-panel, .opening .right-panel {
+            transition-timing-function: cubic-bezier(.22,.61,.36,1);
+            transition-duration: 2s;
+        }
+        .opening .left-panel { transform: rotateY(-120deg); }
+        .opening .right-panel { transform: rotateY(120deg); }
+        .opening .seal-container { opacity: 0; transform: translate(calc(-50% + 150px), -50%) scale(0.8); pointer-events: none; }
+    </style>
+    <div id="envelope-overlay" class="envelope-container absolute inset-0 z-50 overflow-hidden bg-transparent flex" style="perspective: 1200px;">
+        <img class="left-panel absolute top-0 left-0 w-1/2 h-full object-cover object-right shadow-[15px_0_30px_rgba(0,0,0,0.5)] z-20 transition-transform duration-[1500ms] ease-in-out origin-left" src="BASE64" alt="">
+        <img class="right-panel absolute top-0 right-0 w-1/2 h-full object-cover object-left z-10 transition-transform duration-[1500ms] ease-in-out origin-right" src="BASE64" alt="">
+        
+        <div class="seal-container absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-700 ease-in-out flex items-center justify-center cursor-pointer hover:scale-105" onclick="openEnvelope()">
+
+            <svg viewBox="0 0 200 200" class="absolute w-[180px] h-[180px] animate-[spin_10s_linear_infinite] pointer-events-none">
+                <defs>
+                    <path id="circlePath" d="M100,100 m-75,0 a75,75 0 1,1 150,0 a75,75 0 1,1 -150,0"/>
+                </defs>
+                <text direction="rtl" fill="#d97706" font-size="18" font-weight="bold" font-family="Cairo" letter-spacing="2">
+                    <textPath href="#circlePath" startOffset="50%" text-anchor="middle">اضغط لفتح الدعوة</textPath>
+                </text>
+            </svg>
+            <img class="w-28 h-28 object-contain filter drop-shadow-2xl z-10" src="BASE64" alt="">
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div id="main-content" class="opacity-0 scale-95 transition-all duration-[1500ms] ease-out absolute inset-0 overflow-y-auto overflow-x-hidden hidden">
+        
+        <!-- Background SVG Pattern -->
+        <div class="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style="background-image: url('BASE64'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23d97706\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+        
+        <!-- Falling Petals Container -->
+        <div id="petals-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+        <!-- 1. Hero Section -->
+        <section class="relative min-h-screen flex flex-col items-center justify-center text-center p-6 z-20 overflow-hidden">
+            <!-- Animated Background Image (No Overlay) -->
+            <div class="absolute inset-0 z-0 pointer-events-none">
+                <div class="w-full h-full bg-cover bg-center hero-bg-pan" style="background-image: url('BASE64');"></div>
+            </div>
+            
+            <!-- Content Wrapper to stay above background -->
+            <div class="relative z-10 w-full flex flex-col items-center justify-center">
+            
+
+            <div class="mb-6 animate-float">
+                <img src="BASE64" class="w-20 h-20 opacity-80 object-contain" alt="Rings">
+            </div>
+            <p class="text-blush-600 font-medium tracking-wide uppercase text-sm md:text-base mb-4">تتشرف عائلتا</p>
+            <h1 class="font-serif text-6xl md:text-8xl lg:text-9xl text-gold-600 mb-6 drop-shadow-sm">مبروك <span class="text-blush-300 mx-2">&</span> مبروكة</h1>
+            <p class="text-blush-600 font-medium tracking-wide text-sm md:text-base mb-12 max-w-lg leading-relaxed">بدعوتكم لحضور حفل زفاف نجليهما</p>
+            
+            <div class="flex flex-col md:flex-row items-center gap-6 text-xl md:text-2xl font-serif text-blush-800 bg-white/50 px-10 py-6 rounded-3xl backdrop-blur-sm border border-blush-100 shadow-sm">
+                <span>السبت</span>
+                <span class="hidden md:block w-2 h-2 rounded-full bg-gold-400"></span>
+                <span class="text-3xl md:text-4xl text-gold-600 font-bold px-4">12 يوليو 2026</span>
+                <span class="hidden md:block w-2 h-2 rounded-full bg-gold-400"></span>
+                
+            </div>
+            
+            
+                    </div>
+    <div class="absolute bottom-10 animate-bounce cursor-pointer p-4" onclick="document.getElementById('countdown').scrollIntoView({behavior: 'smooth'})">
+                <p class="text-xs text-blush-400 uppercase tracking-widest mb-2">اسحب للأسفل</p>
+                <svg class="w-6 h-6 text-gold-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+</section>
+
+        <!-- 2. Countdown Section -->
+        <section id="countdown" class="relative min-h-screen flex flex-col items-center justify-center text-center p-6 z-20 border-y border-blush-100 shadow-sm">
+
+            <!-- Animated Background Image (No Overlay) -->
+            <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div class="w-full h-full bg-cover bg-center hero-bg-pan" style="background-image: url('BASE64');"></div>
+            </div>
+            
+            <!-- Content Wrapper -->
+            <div class="relative z-10 w-full flex flex-col items-center justify-center">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <div class="inline-block mb-4">
+                    <svg class="w-8 h-8 text-gold-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="font-serif text-4xl md:text-5xl text-gold-600 mb-2">اليوم المنتظر</h2>
+                <p class="text-blush-500 mb-12 italic text-lg">لحظات تفصلنا عن اللقاء</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8" dir="ltr">
+                    <!-- Kept LTR for countdown numbers so it's Days Hours Mins Secs -->
+                    <div class="bg-blush-50/50 p-6 rounded-2xl border border-blush-100 flex flex-col items-center shadow-sm">
+                        <span id="cd-days" class="font-serif text-5xl md:text-6xl text-blush-800 font-bold mb-2">00</span>
+                        <span class="text-xs font-bold text-gold-600 tracking-wider">يوم</span>
+                    </div>
+                    <div class="bg-blush-50/50 p-6 rounded-2xl border border-blush-100 flex flex-col items-center shadow-sm">
+                        <span id="cd-hours" class="font-serif text-5xl md:text-6xl text-blush-800 font-bold mb-2">00</span>
+                        <span class="text-xs font-bold text-gold-600 tracking-wider">ساعة</span>
+                    </div>
+                    <div class="bg-blush-50/50 p-6 rounded-2xl border border-blush-100 flex flex-col items-center shadow-sm">
+                        <span id="cd-mins" class="font-serif text-5xl md:text-6xl text-blush-800 font-bold mb-2">00</span>
+                        <span class="text-xs font-bold text-gold-600 tracking-wider">دقيقة</span>
+                    </div>
+                    <div class="bg-blush-50/50 p-6 rounded-2xl border border-blush-100 flex flex-col items-center shadow-sm">
+                        <span id="cd-secs" class="font-serif text-5xl md:text-6xl text-blush-800 font-bold mb-2">00</span>
+                        <span class="text-xs font-bold text-gold-600 tracking-wider">ثانية</span>
+                    </div>
+                </div>
+
+                <!-- Analog Clock -->
+                <div style="width:100%;display:flex;justify-content:center;margin-top:2rem;">
+                  <div class="heart-clock-container" style="width: 200px; height: 200px;">
+                    <svg class="heart-svg" id="heartClockSvg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:2;">
+                      <!-- Ticks and Hands -->
+                      <g id="hcTicks" stroke="#ec4899" stroke-linecap="round"></g>
+                      <g id="hcDots"></g>
+                      <!-- Hands -->
+                      <line id="hcMHand" x1="130" y1="130" x2="130" y2="80" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
+                      <line id="hcHHand" x1="130" y1="130" x2="130" y2="100" stroke="#9d174d" stroke-width="6" stroke-linecap="round"/>
+                      <line id="hcSHand" x1="130" y1="140" x2="130" y2="70" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>
+                      <!-- Center Pin -->
+                      <circle cx="130" cy="130" r="7" fill="#9d174d"/>
+                      <circle cx="130" cy="130" r="3" fill="#fff"/>
+                    </svg>
+                  </div>
+                </div>
+            </div>
+        
+            
+                    </div>
+        <!-- Scroll Hint -->
+            <div class="absolute bottom-1 animate-bounce cursor-pointer p-4" onclick="document.getElementById('timeline').scrollIntoView({behavior: 'smooth'})">
+                <p class="text-xs text-blush-400 uppercase tracking-widest mb-2">اسحب للأسفل</p>
+                <svg class="w-6 h-6 text-gold-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+        </section>
+
+        <!-- 3. Timeline / Programme Section -->
+        <section id="timeline" class="relative py-24 z-20 overflow-hidden">
+            <!-- Animated Background Image (No Overlay) -->
+            <div class="absolute inset-0 z-0 pointer-events-none">
+                <div class="w-full h-full bg-cover bg-center hero-bg-pan" style="background-image: url('BASE64');"></div>
+            </div>
+            
+            <div class="relative z-10 w-full h-full">
+            <div class="max-w-4xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="font-serif text-4xl md:text-5xl text-gold-600 mb-4">المواعيد</h2>
+                    <div class="w-16 h-1 bg-gold-400 mx-auto rounded-full"></div>
+                </div>
+                
+                <div class="relative border-r-2 border-gold-200 mr-4 md:mr-1/2 md:translate-x-[1px] space-y-12 pb-8">
+                    
+                    <!-- Event 1 -->
+                    <div class="relative pr-8 md:w-1/2 md:pl-10 md:pr-0 md:mr-0 md:text-left group">
+                        <div class="absolute w-5 h-5 bg-gradient-to-bl from-gold-400 to-gold-600 rounded-full -right-[10px] md:-left-[10px] md:right-auto top-6 border-4 border-blush-50 shadow-sm z-10 transition-transform group-hover:scale-125"></div>
+                        <div class="bg-white/30 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-blush-100 transform transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                            <div class="text-gold-500 mb-2">
+                                <img src="BASE64" class="w-10 h-10 md:mr-auto object-contain opacity-80" alt="Rings">
+                            </div>
+                            <span class="text-xs font-bold text-blush-400 tracking-widest">12 يوليو • صلاة العصر</span>
+                            <h3 class="font-serif text-2xl text-blush-900 mt-2 mb-2">عقد القران(الفاتحة)</h3>
+                            <p class="text-blush-600 mb-6 text-sm">مسجد مولاي محمد, طرابلس</p>
+                            <button onclick="openMap('عقد القران', 32.882152881836525, 13.187690159514803)" class="inline-flex items-center gap-2 text-sm text-blush-800 font-medium hover:text-gold-600 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                عرض الموقع
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="relative pr-8 md:w-1/2 md:mr-auto md:pr-10 group">
+                        <div class="absolute w-5 h-5 bg-gradient-to-bl from-gold-400 to-gold-600 rounded-full -right-[10px] top-6 border-4 border-blush-50 shadow-sm z-10 transition-transform group-hover:scale-125"></div>
+                        <div class="bg-white/30 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-blush-100 transform transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                            <div class="text-gold-500 mb-2">
+                                <img src="BASE64" class="w-10 h-10 md:mr-auto object-contain opacity-80" alt="Food">
+                            </div>
+                            <span class="text-xs font-bold text-blush-400 tracking-widest">13 يوليو • 7:00 مساءً</span>
+                            <h3 class="font-serif text-2xl text-blush-900 mt-2 mb-2">صالة الأفراح</h3>
+                            <p class="text-blush-600 mb-6 text-sm">قاعة فرحتي, طرابلس</p>
+                            <button onclick="openMap('صالة الأفراح', 32.875709486905414, 13.21033833779967)" class="inline-flex items-center gap-2 text-sm text-blush-800 font-medium hover:text-gold-600 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                عرض الموقع
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+                    </div>
+        </section>
+
+        <!-- 4. Closing -->
+        <section class="relative py-24 text-center z-20 bg-blush-50 text-blush-900 overflow-hidden">
+            <!-- Decorative Bottom Pattern -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold-500 to-transparent opacity-50"></div>
+            
+            <h2 class="font-serif text-5xl md:text-6xl text-gold-600 mb-6">مبروك ومبروكة</h2>
+            <p class="text-blush-600 italic mb-12 text-lg">يسعدنا مشاركتكم هذه الفرحة</p>
+            
+            <div class="flex justify-center mb-10">
+                 <img src="BASE64" class="w-12 h-12 opacity-80 animate-pulse-slow object-contain" alt="Rings">
+            </div>
+            
+            <p class="text-xs text-blush-500 tracking-widest">© 2026 حفل زفاف مبروك ومبروكة</p>
+        </section>
+
+    </div>
+
+        </div>
+
+    <!-- Map Modal -->
+    <div id="map-modal" class="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden transform translate-y-8 transition-transform duration-300 border border-blush-100" id="map-modal-content">
+            <div class="p-5 flex justify-between items-center border-b border-blush-50 bg-blush-50/50">
+                <h3 class="font-serif text-2xl text-blush-900" id="modal-title">الموقع</h3>
+                <button onclick="closeMap()" class="text-blush-400 hover:text-blush-800 hover:bg-blush-100 p-2 rounded-full transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="leaflet-map" class="w-full h-72 bg-blush-50 z-0 relative"></div>
+            <div class="p-5 bg-white text-center">
+                <button id="maps-link-btn" class="w-full bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 text-white font-medium tracking-wide py-3 px-6 rounded-xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    افتح في خرائط جوجل
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- Envelope Logic ---
+        function openEnvelope() {
+            const container = document.getElementById('envelope-overlay');
+            container.classList.add('opening');
+            
+            // Show main content underneath while envelope animation plays
+            const mainContent = document.getElementById('main-content');
+            mainContent.classList.remove('hidden');
+            
+            // Force a reflow so the transition happens smoothly
+            void mainContent.offsetWidth;
+            
+            mainContent.classList.remove('opacity-0', 'scale-95');
+            mainContent.classList.add('opacity-100', 'scale-100');
+            startPetals();
+            
+            setTimeout(() => {
+                container.classList.add('open');
+            }, 2000);
+        }
+
+        // --- Petal Animation Logic ---
+        function startPetals() {
+            const container = document.getElementById('petals-container');
+            const petalCount = 15;
+
+            for(let i=0; i<petalCount; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal animate-petal-fall';
+                
+                // Randomize size, position, and duration
+                const size = Math.random() * 8 + 8;
+                petal.style.width = `${size}px`;
+                petal.style.height = `${size * 1.5}px`;
+                petal.style.left = `${Math.random() * 100}%`;
+                
+                petal.style.animationDuration = `${Math.random() * 8 + 7}s`;
+                petal.style.animationDelay = `${Math.random() * 5}s`;
+                
+                container.appendChild(petal);
+            }
+        }
+
+        // --- Countdown Timer Logic ---
+        // Setting target to July 12, 2026 15:30:00
+        const weddingDate = new Date('2026-07-12T15:30:00').getTime();
+        
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = weddingDate - now;
+
+            if (distance < 0) {
+                document.getElementById('cd-days').innerText = "00";
+                document.getElementById('cd-hours').innerText = "00";
+                document.getElementById('cd-mins').innerText = "00";
+                document.getElementById('cd-secs').innerText = "00";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+            document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('cd-mins').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('cd-secs').innerText = String(seconds).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // --- Map Modal Logic ---
+        let map = null;
+        let marker = null;
+
+        function openMap(title, lat, lng) {
+            const modal = document.getElementById('map-modal');
+            const modalContent = document.getElementById('map-modal-content');
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('maps-link-btn').onclick = () => {
+                window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank');
+            };
+
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Trigger reflow
+            void modal.offsetWidth;
+            
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('translate-y-8');
+
+            // Init map after transition to avoid rendering bugs
+            setTimeout(() => {
+                if (!map) {
+                    map = L.map('leaflet-map').setView([lat, lng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
+                } else {
+                    map.setView([lat, lng], 15);
+                }
+
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                
+                // Custom blush/gold icon
+                const customIcon = L.divIcon({
+                    className: 'custom-pin',
+                    html: `<div style="color: #d97706; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));"><svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg></div>`,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                });
+
+                marker = L.marker([lat, lng], {icon: customIcon}).addTo(map);
+                map.invalidateSize();
+            }, 350);
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMap() {
+            const modal = document.getElementById('map-modal');
+            const modalContent = document.getElementById('map-modal-content');
+            
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('translate-y-8');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
+        }
+        
+        // Close modal on click outside
+        document.getElementById('map-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMap();
+            }
+        });
+    </script>
+
+    
+    <!-- Analog Clock Logic -->
+    <script>
+    (function(){
+      var cx=130,cy=130,r=75;
+      var tg=document.getElementById('hcTicks'),hg=document.getElementById('hcDots');
+      if(!tg||!hg)return;
+      for(var i=0;i<60;i++){
+        var ang=(i/60)*2*Math.PI-Math.PI/2,isH=i%5===0,r1=isH?r-13:r-7;
+        var x1=cx+r*Math.cos(ang),y1=cy+r*Math.sin(ang),x2=cx+r1*Math.cos(ang),y2=cy+r1*Math.sin(ang);
+        var ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+        ln.setAttribute('x1',x1.toFixed(2));ln.setAttribute('y1',y1.toFixed(2));ln.setAttribute('x2',x2.toFixed(2));ln.setAttribute('y2',y2.toFixed(2));
+        ln.setAttribute('stroke-width',isH?'3':'1.5');ln.setAttribute('opacity',isH?'1':'0.5');tg.appendChild(ln);
+      }
+      for(var j=0;j<12;j++){
+        var ang2=(j/12)*2*Math.PI-Math.PI/2,rd=r-24;
+        var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        dot.setAttribute('cx',(cx+rd*Math.cos(ang2)).toFixed(2));dot.setAttribute('cy',(cy+rd*Math.sin(ang2)).toFixed(2));
+        dot.setAttribute('r','3.5');dot.setAttribute('fill','#f59e0b');hg.appendChild(dot);
+      }
+      function rot(id,deg){var el=document.getElementById(id);if(el)el.setAttribute('transform','rotate('+deg+' '+cx+' '+cy+')');}
+      function live(){var now=new Date(),ms=now.getMilliseconds(),s=now.getSeconds()+ms/1000,m=now.getMinutes()+s/60,h=now.getHours()%12+m/60;rot('hcSHand',s*6);rot('hcMHand',m*6);rot('hcHHand',h*30);}
+      var anim=false;
+      function entry(){if(anim)return;anim=true;var now=new Date(),ms=now.getMilliseconds(),s=now.getSeconds()+ms/1000,m=now.getMinutes()+s/60,h=now.getHours()%12+m/60;var tS=s*6,tM=m*6,tH=h*30,dur=1800,t0=performance.now();(function step(ts){var pr=Math.min((ts-t0)/dur,1),e=1-Math.pow(1-pr,3);rot('hcSHand',e*tS);rot('hcMHand',e*tM);rot('hcHHand',e*tH);if(pr<1)requestAnimationFrame(step);else setInterval(live,50);})(t0);}
+      var sec=document.getElementById('countdown');
+      if(!sec){setInterval(live,50);return;}
+      new IntersectionObserver(function(es){if(es[0].isIntersecting)entry();},{threshold:0.3}).observe(sec);
+    })();
+    </script>
+
+
+</body>
+</html>
+
